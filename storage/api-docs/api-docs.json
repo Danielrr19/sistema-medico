@@ -1,0 +1,1376 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API de Gestión Médica",
+        "description": "API RESTful para administrar pacientes, doctores y citas. Autenticación con Laravel Sanctum (token Bearer).",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "Servidor local"
+        }
+    ],
+    "paths": {
+        "/register": {
+            "post": {
+                "tags": [
+                    "Autenticación"
+                ],
+                "summary": "Registrar un usuario",
+                "description": "Crea el usuario y devuelve su primer token.",
+                "operationId": "5d4fa5d5607ed675ba93907e1fc94534",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Daniel"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "daniel@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Mínimo 8 caracteres",
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuario creado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/Usuario"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Autenticación"
+                ],
+                "summary": "Iniciar sesión",
+                "description": "Verifica las credenciales y devuelve un token nuevo.",
+                "operationId": "67d6d0fdd54fba132e1b6f55ca254183",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "daniel@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sesión iniciada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/Usuario"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "2|xyz789..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales incorrectas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Credenciales incorrectas."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "Autenticación"
+                ],
+                "summary": "Cerrar sesión",
+                "description": "Invalida el token con el que se hizo la petición.",
+                "operationId": "28d48c13fca984400ac8de99f54ee13a",
+                "responses": {
+                    "200": {
+                        "description": "Sesión cerrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Sesión cerrada correctamente."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user": {
+            "get": {
+                "tags": [
+                    "Autenticación"
+                ],
+                "summary": "Ver el usuario autenticado",
+                "operationId": "70b03e2a769112c3f7fec363191faeca",
+                "responses": {
+                    "200": {
+                        "description": "Datos del usuario",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Usuario"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/citas": {
+            "get": {
+                "tags": [
+                    "Citas"
+                ],
+                "summary": "Listar citas",
+                "description": "Lista paginada (10 por página) con paciente y doctor incluidos.",
+                "operationId": "e6d75a05bcd0f6744907467689a44b08",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de citas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Cita"
+                                            }
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 25
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Citas"
+                ],
+                "summary": "Crear una cita",
+                "description": "Valida que paciente y doctor existan, que la fecha sea futura y que el doctor no tenga otra cita (no cancelada) a esa hora.",
+                "operationId": "658f55ccc65d4c0c3bcb2a8bcff3a602",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Cita creada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/citas/{cita}": {
+            "get": {
+                "tags": [
+                    "Citas"
+                ],
+                "summary": "Ver una cita",
+                "operationId": "f60928a5bc231f1e0a00c2cdfb276a2f",
+                "parameters": [
+                    {
+                        "name": "cita",
+                        "in": "path",
+                        "description": "ID de la cita",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos de la cita",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Citas"
+                ],
+                "summary": "Actualizar una cita",
+                "description": "Se pueden enviar solo los campos que cambian (por ejemplo, solo el estado).",
+                "operationId": "1b03e621112b5704d5d7dba8c88348f8",
+                "parameters": [
+                    {
+                        "name": "cita",
+                        "in": "path",
+                        "description": "ID de la cita",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CitaInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cita actualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cita"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Citas"
+                ],
+                "summary": "Eliminar una cita",
+                "operationId": "d0fc07b11c0cc610d42d345782d71040",
+                "parameters": [
+                    {
+                        "name": "cita",
+                        "in": "path",
+                        "description": "ID de la cita",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Eliminada (sin contenido)"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/doctores": {
+            "get": {
+                "tags": [
+                    "Doctores"
+                ],
+                "summary": "Listar doctores",
+                "description": "Lista paginada (10 por página), los más nuevos primero.",
+                "operationId": "27c687a5b5cff873d02b82afc5e6165d",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de doctores",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Doctor"
+                                            }
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 25
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Doctores"
+                ],
+                "summary": "Crear un doctor",
+                "operationId": "6111abe9cc8353250092b5efd842a220",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DoctorInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Doctor creado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Doctor"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/doctores/{doctor}": {
+            "get": {
+                "tags": [
+                    "Doctores"
+                ],
+                "summary": "Ver un doctor",
+                "operationId": "5192bd93b096b8de1a59654c59ca5e85",
+                "parameters": [
+                    {
+                        "name": "doctor",
+                        "in": "path",
+                        "description": "ID del doctor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos del doctor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Doctor"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Doctores"
+                ],
+                "summary": "Actualizar un doctor",
+                "description": "Se pueden enviar solo los campos que cambian.",
+                "operationId": "39fc778f80432443be399905a6b9328a",
+                "parameters": [
+                    {
+                        "name": "doctor",
+                        "in": "path",
+                        "description": "ID del doctor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DoctorInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Doctor actualizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Doctor"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Doctores"
+                ],
+                "summary": "Eliminar un doctor",
+                "description": "También elimina sus citas.",
+                "operationId": "547cf3c0faf715dd02542eb00146646b",
+                "parameters": [
+                    {
+                        "name": "doctor",
+                        "in": "path",
+                        "description": "ID del doctor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Eliminado (sin contenido)"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/pacientes": {
+            "get": {
+                "tags": [
+                    "Pacientes"
+                ],
+                "summary": "Listar pacientes",
+                "description": "Lista paginada (10 por página), los más nuevos primero.",
+                "operationId": "b7ab039c8ccaa67429bbf78446fc7ce1",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de pacientes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Paciente"
+                                            }
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 25
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pacientes"
+                ],
+                "summary": "Crear un paciente",
+                "operationId": "4acb7bc00130190fa5a895b88f299812",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Paciente creado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/pacientes/{paciente}": {
+            "get": {
+                "tags": [
+                    "Pacientes"
+                ],
+                "summary": "Ver un paciente",
+                "operationId": "6d9b3652bd29272bfe76f27585052bb1",
+                "parameters": [
+                    {
+                        "name": "paciente",
+                        "in": "path",
+                        "description": "ID del paciente",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Datos del paciente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pacientes"
+                ],
+                "summary": "Actualizar un paciente",
+                "description": "Se pueden enviar solo los campos que cambian.",
+                "operationId": "b13c7fe1ba3f136b578ad26a32d21685",
+                "parameters": [
+                    {
+                        "name": "paciente",
+                        "in": "path",
+                        "description": "ID del paciente",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PacienteInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Paciente actualizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Paciente"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ErrorValidacion"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pacientes"
+                ],
+                "summary": "Eliminar un paciente",
+                "description": "También elimina sus citas.",
+                "operationId": "37338bca29b97194e4db5c5607db02a1",
+                "parameters": [
+                    {
+                        "name": "paciente",
+                        "in": "path",
+                        "description": "ID del paciente",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Eliminado (sin contenido)"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NoEncontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/reportes/citas-por-estado": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de citas por estado",
+                "description": "Cuenta las citas de cada estado. Los estados sin citas aparecen con 0.",
+                "operationId": "7c807ed46e23d9b154150be585e3575d",
+                "responses": {
+                    "200": {
+                        "description": "Conteo por estado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "por_estado": {
+                                            "type": "object",
+                                            "example": {
+                                                "pendiente": 2,
+                                                "confirmada": 1,
+                                                "completada": 0,
+                                                "cancelada": 0
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/reportes/citas-por-doctor": {
+            "get": {
+                "tags": [
+                    "Reportes"
+                ],
+                "summary": "Reporte de citas por doctor",
+                "description": "Cantidad de citas de cada doctor, del que más tiene al que menos. Incluye doctores sin citas.",
+                "operationId": "bdfb33150aebd10119f59441db734a6b",
+                "responses": {
+                    "200": {
+                        "description": "Citas por doctor",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "nombre": {
+                                                        "type": "string",
+                                                        "example": "Dr. Carlos Rivas"
+                                                    },
+                                                    "especialidad": {
+                                                        "type": "string",
+                                                        "example": "Cardiología"
+                                                    },
+                                                    "total_citas": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/NoAutenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Usuario": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Daniel"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "daniel@example.com"
+                    }
+                },
+                "type": "object"
+            },
+            "Paciente": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Ana Martínez"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "ana@example.com"
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "example": "7345-1290",
+                        "nullable": true
+                    },
+                    "fecha_nacimiento": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "1990-05-20"
+                    },
+                    "historial_medico": {
+                        "type": "string",
+                        "example": "Sin antecedentes.",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "PacienteInput": {
+                "required": [
+                    "nombre",
+                    "email",
+                    "fecha_nacimiento"
+                ],
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "example": "Ana Martínez"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "ana@example.com"
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "example": "7345-1290",
+                        "nullable": true
+                    },
+                    "fecha_nacimiento": {
+                        "description": "Debe ser anterior a hoy",
+                        "type": "string",
+                        "format": "date",
+                        "example": "1990-05-20"
+                    },
+                    "historial_medico": {
+                        "type": "string",
+                        "example": "Sin antecedentes.",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Doctor": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "type": "string",
+                        "example": "Dr. Carlos Rivas"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "carlos@example.com"
+                    },
+                    "especialidad": {
+                        "type": "string",
+                        "example": "Cardiología"
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "example": "7345-1290",
+                        "nullable": true
+                    },
+                    "cualificaciones": {
+                        "type": "string",
+                        "example": "Especialista en cardiología clínica.",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DoctorInput": {
+                "required": [
+                    "nombre",
+                    "email",
+                    "especialidad"
+                ],
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "example": "Dr. Carlos Rivas"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "carlos@example.com"
+                    },
+                    "especialidad": {
+                        "type": "string",
+                        "example": "Cardiología"
+                    },
+                    "telefono": {
+                        "type": "string",
+                        "example": "7345-1290",
+                        "nullable": true
+                    },
+                    "cualificaciones": {
+                        "type": "string",
+                        "example": "Especialista en cardiología clínica.",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Cita": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "paciente_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "doctor_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "fecha_cita": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-11-05T10:00:00.000000Z"
+                    },
+                    "estado": {
+                        "type": "string",
+                        "example": "pendiente",
+                        "enum": [
+                            "pendiente",
+                            "confirmada",
+                            "completada",
+                            "cancelada"
+                        ]
+                    },
+                    "notas": {
+                        "type": "string",
+                        "example": "Primera consulta",
+                        "nullable": true
+                    },
+                    "paciente": {
+                        "$ref": "#/components/schemas/Paciente"
+                    },
+                    "doctor": {
+                        "$ref": "#/components/schemas/Doctor"
+                    }
+                },
+                "type": "object"
+            },
+            "CitaInput": {
+                "required": [
+                    "paciente_id",
+                    "doctor_id",
+                    "fecha_cita"
+                ],
+                "properties": {
+                    "paciente_id": {
+                        "description": "Debe existir",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "doctor_id": {
+                        "description": "Debe existir",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "fecha_cita": {
+                        "description": "Fecha futura; el doctor no puede tener otra cita a esa hora",
+                        "type": "string",
+                        "example": "2026-11-05 10:00:00"
+                    },
+                    "estado": {
+                        "type": "string",
+                        "example": "pendiente",
+                        "enum": [
+                            "pendiente",
+                            "confirmada",
+                            "completada",
+                            "cancelada"
+                        ]
+                    },
+                    "notas": {
+                        "type": "string",
+                        "example": "Primera consulta",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "responses": {
+            "NoAutenticado": {
+                "description": "Falta el token o no es válido",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "Unauthenticated."
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "NoEncontrado": {
+                "description": "El registro no existe",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "No query results for model."
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "ErrorValidacion": {
+                "description": "Los datos enviados no son válidos",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "example": "The email field is required."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "example": {
+                                        "email": [
+                                            "The email field is required."
+                                        ]
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Pega el token que devuelve /login o /register (sin la palabra Bearer).",
+                "bearerFormat": "Token",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Autenticación",
+            "description": "Autenticación"
+        },
+        {
+            "name": "Citas",
+            "description": "Citas"
+        },
+        {
+            "name": "Doctores",
+            "description": "Doctores"
+        },
+        {
+            "name": "Pacientes",
+            "description": "Pacientes"
+        },
+        {
+            "name": "Reportes",
+            "description": "Reportes"
+        }
+    ]
+}
